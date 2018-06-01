@@ -54,6 +54,11 @@ body.post-type-wcb_sponsor_invoice #save-action {
 	margin-bottom: 1em;
 }
 
+.wcb-form li > .select2-container {
+	margin-left: 1em;
+	margin-bottom: 1em;
+}
+
 .wcb-form-required {
 	color: #dc3232;
 }

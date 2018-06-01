@@ -166,7 +166,6 @@ window.wcb = window.wcb || {models:{}, input:[]};
         },
 
         initialize: function() {
-            this.model.bind('change', this.render, this);
             this.model.bind('destroy', this.remove, this);
         },
 
@@ -228,6 +227,11 @@ window.wcb = window.wcb || {models:{}, input:[]};
             this.$el.toggleClass('has-changed', this.model.hasChanged() && ! this.model.get('new'));
             this.$el.toggleClass('is-new', this.model.get('new'));
             this.$el.data('wcb-cid', this.model.cid);
+
+			if( data.name === 'currency' && $.fn.hasOwnProperty( 'select2' ) ){
+				this.$el.find( 'select' ).select2( { width: '100%' } );
+			}
+
             return this;
         },
 
@@ -262,10 +266,10 @@ window.wcb = window.wcb || {models:{}, input:[]};
                     var amount = parseFloat(this.$el.find('.amount').val().replace(/[^\d.-]/g, ''));
                     this.model.set('amount', amount || 0);
                 }
-            }
+				this.render.apply( this );
+			}
 
             this.clearSelection.apply(this);
-            this.render.apply(this);
             return false;
         },
 
