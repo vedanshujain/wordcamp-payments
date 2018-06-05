@@ -229,7 +229,8 @@ window.wcb = window.wcb || {models:{}, input:[]};
             this.$el.data('wcb-cid', this.model.cid);
 
 			if( data.name === 'currency' && $.fn.hasOwnProperty( 'select2' ) ){
-				this.$el.find( 'select' ).select2( { width: '100%' } );
+				var currSelect2Box = this.$el.find( 'select' ).select2( { width: '100%' } );
+				currSelect2Box.data( 'select2' ).$dropdown.addClass( 'select2-currency-dropdown' );
 			}
 
             return this;
