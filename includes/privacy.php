@@ -17,7 +17,6 @@ add_filter( 'wp_privacy_personal_data_erasers', __NAMESPACE__ . '\register_perso
  *
  * @return array
  */
-
 function register_personal_data_erasers( $erasers ) {
 	/**
 	 * We should not add a eraser for WordCamp post type, because it contains data which can be used for
@@ -42,7 +41,7 @@ function register_personal_data_exporters( $exporters ) {
 	);
 
 	$exporters['wcb-vendor-payments'] = array(
-		'exporter_friendly_name' => __( 'WordCamp Vendor Payment Request Bank Details', 'wordcamporg' ),
+		'exporter_friendly_name' => __( 'WordCamp Vendor Payment Requests', 'wordcamporg' ),
 		'callback' => __NAMESPACE__ . '\vendor_payment_exporter',
 	);
 
@@ -73,7 +72,6 @@ function vendor_payment_exporter( $email_address, $page) {
 	$sponsor_invoices = wcb_get_post_wp_query( \WCP_Payment_Request::POST_TYPE, $page, $user->ID );
 
 	if ( empty( $sponsor_invoices ) ) {
-		error_log( ' empty sponsor invouces...');
 		return $results;
 	}
 
