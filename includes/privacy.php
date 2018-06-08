@@ -13,16 +13,16 @@ add_filter( 'wp_privacy_personal_data_erasers', __NAMESPACE__ . '\register_perso
 
 /**
  * Registers the personal data eraser for each WordCamp post type
+ *
  * @param array $erasers
  *
  * @return array
  */
 function register_personal_data_erasers( $erasers ) {
 	/**
-	 * We should not add a eraser for WordCamp post type, because it contains data which can be used for
+	 * This is an empty stub, we are not adding an eraser for now, because it contains data which can be used for
 	 * accounting or reference purpose.
 	 *
-	 * This is just an empty stub so that we do not create one.
 	 */
 	return $erasers;
 }
@@ -42,7 +42,7 @@ function register_personal_data_exporters( $exporters ) {
 
 	$exporters['wcb-vendor-payments'] = array(
 		'exporter_friendly_name' => __( 'WordCamp Vendor Payment Requests', 'wordcamporg' ),
-		'callback' => __NAMESPACE__ . '\vendor_payment_exporter',
+		'callback'               => __NAMESPACE__ . '\vendor_payment_exporter',
 	);
 
 	return $exporters;
@@ -56,54 +56,49 @@ function register_personal_data_exporters( $exporters ) {
  *
  * @return array
  */
-function vendor_payment_exporter( $email_address, $page) {
+function vendor_payment_exporter( $email_address, $page ) {
 
 	$results = array(
 		'data' => array(),
 		'done' => true,
 	);
 
-	$user = get_user_by( 'email', $email_address );
+	$vendor_payment_requests = get_post_wp_query( \WCP_Payment_Request::POST_TYPE, $page, $email_address );
 
-	if ( empty( $user->ID ) ) {
-		return $results;
-	}
-
-	$sponsor_invoices = wcb_get_post_wp_query( \WCP_Payment_Request::POST_TYPE, $page, $user->ID );
-
-	if ( empty( $sponsor_invoices ) ) {
+	if ( empty( $vendor_payment_requests ) ) {
 		return $results;
 	}
 
 	$data_to_export = array();
-	foreach ( $sponsor_invoices->posts as $post ) {
-		$sponsor_inv_exp_data = array();
-		$meta = get_post_meta( $post->ID );
+	foreach ( $vendor_payment_requests->posts as $post ) {
+		$vendor_payment_exp_data = array();
+		$meta                    = get_post_meta( $post->ID );
 
-		$sponsor_inv_exp_data[] = [
-			'name' => 'Title',
+		$vendor_payment_exp_data[] = [
+			'name'  => __( 'Title', 'wordcamporg' ),
 			'value' => $post->post_title,
 		];
-		$sponsor_inv_exp_data[] = [
-			'name' => 'Date',
+		$vendor_payment_exp_data[] = [
+			'name'  => __( 'Date', 'wordcamporg' ),
 			'value' => $post->post_date,
 		];
 
-		$sponsor_inv_exp_data =
-			array_merge( $sponsor_inv_exp_data, wcb_get_meta_details( $meta, '_camppayments_' ) );
+		$vendor_payment_exp_data = array_merge(
+			$vendor_payment_exp_data, get_meta_details( $meta, '_camppayments_' )
+		);
 
-		if ( ! empty( $sponsor_inv_exp_data ) ) {
+		if ( ! empty( $vendor_payment_exp_data ) ) {
 			$data_to_export[] = array(
-				'group_id' => \WCP_Payment_Request::POST_TYPE,
-				'group_label' => 'WordCamp Sponsor Invoices',
-				'item_id' => \WCP_Payment_Request::POST_TYPE . "-{$post->ID}",
-				'data' => $sponsor_inv_exp_data,
+				'group_id'    => \WCP_Payment_Request::POST_TYPE,
+				'group_label' => __( 'WordCamp Vendor Payments', 'wordcamporg' ),
+				'item_id'     => \WCP_Payment_Request::POST_TYPE . "-{$post->ID}",
+				'data'        => $vendor_payment_exp_data,
 			);
 		}
 	}
 
-	$results[ 'done' ] = $sponsor_invoices->max_num_pages <= $page;
-	$results[ 'data' ] = $data_to_export;
+	$results['done'] = $vendor_payment_requests->max_num_pages <= $page;
+	$results['data'] = $data_to_export;
 
 	return $results;
 }
@@ -112,7 +107,7 @@ function vendor_payment_exporter( $email_address, $page) {
  * Finds and exports personal data associated with an email address in a Reimbursement Request.
  *
  * @param string $email_address
- * @param int    $page
+ * @param int $page
  *
  * @return array
  */
@@ -123,13 +118,7 @@ function reimbursements_exporter( $email_address, $page ) {
 		'done' => true,
 	);
 
-	$user = get_user_by( 'email', $email_address );
-
-	if ( empty( $user->ID ) ) {
-		return $results;
-	}
-
-	$reimbursements = wcb_get_post_wp_query( Reimbursement_Requests\POST_TYPE, $page, $user->ID );
+	$reimbursements = get_post_wp_query( Reimbursement_Requests\POST_TYPE, $page, $email_address );
 
 	if ( empty( $reimbursements ) ) {
 		return $results;
@@ -138,26 +127,27 @@ function reimbursements_exporter( $email_address, $page ) {
 	$data_to_export = array();
 	foreach ( $reimbursements->posts as $post ) {
 		$reimbursement_data_to_export = array();
-		$meta = get_post_meta( $post->ID );
+		$meta                         = get_post_meta( $post->ID );
 
 		$reimbursement_data_to_export[] = [
-			'name' => 'Title',
+			'name'  => __( 'Title', 'wordcamporg' ),
 			'value' => $post->post_title,
 		];
 		$reimbursement_data_to_export[] = [
-			'name' => 'Date',
+			'name'  => __( 'Date', 'wordcamporg' ),
 			'value' => $post->post_date,
 		];
 
 		// meta fields
-		$reimbursement_data_to_export =
-			array_merge( $reimbursement_data_to_export, wcb_get_meta_details( $meta, '_wcbrr_' ) );
+		$reimbursement_data_to_export = array_merge(
+			$reimbursement_data_to_export, get_meta_details( $meta, '_wcbrr_' )
+		);
 
 
 		if ( ! empty( $reimbursement_data_to_export ) ) {
 			$data_to_export[] = array(
 				'group_id'    => Reimbursement_Requests\POST_TYPE,
-				'group_label' => 'WordCamp Reimbursement Request',
+				'group_label' => __( 'WordCamp Reimbursement Request', 'wordcamporg' ),
 				'item_id'     => Reimbursement_Requests\POST_TYPE . "-{$post->ID}",
 				'data'        => $reimbursement_data_to_export,
 			);
@@ -165,9 +155,46 @@ function reimbursements_exporter( $email_address, $page ) {
 	}
 
 	$results['done'] = $reimbursements->max_num_pages <= $page;
-	$results[ 'data' ] = $data_to_export;
+	$results['data'] = $data_to_export;
 
 	return $results;
+}
+
+function get_post_wp_query( $query_type, $page, $email_address ) {
+
+	$query_args = array(
+		'post_type'      => $query_type,
+		'post_status'    => 'any',
+		'number_posts'   => - 1,
+		'posts_per_page' => 20,
+		'paged'          => $page,
+	);
+
+	switch ( $query_type ) {
+		case Reimbursement_Requests\POST_TYPE :
+			$user = get_user_by( 'email', $email_address );
+
+			if ( empty( $user ) ) {
+				return null;
+			}
+
+			$query_args = array_merge( $query_args, array( 'post_author' => $user->ID ) );
+			break;
+		case \WCP_Payment_Request::POST_TYPE :
+			$query_args['meta_query'] = [
+				'relation' => 'AND',
+			];
+
+			$query_args['meta_query'][] = [
+				'key'   => '_camppayments_vendor_email_address',
+				'value' => $email_address,
+			];
+			break;
+		default :
+			return null;
+	}
+
+	return new WP_Query( $query_args );
 }
 
 /**
@@ -176,81 +203,94 @@ function reimbursements_exporter( $email_address, $page ) {
  *
  * @return array Details of the reimbursement request
  */
-function wcb_get_meta_details( $meta, $prefix ) {
+function get_meta_details( $meta, $prefix ) {
 	$meta_details = array();
-	foreach ( wcb_get_meta_mapping( $prefix ) as $meta_field => $meta_field_name ) {
+	foreach ( get_meta_fields_mapping( $prefix ) as $meta_field => $meta_field_name ) {
 		$data = isset( $meta[ $meta_field ] ) ? $meta[ $meta_field ] : null;
 		if ( ! empty( $data ) && is_array( $data ) && ! empty( $data[0] ) ) {
 			$meta_details[] = [
-				'name' => $meta_field_name,
+				'name'  => $meta_field_name,
 				'value' => $meta [ $meta_field ][0],
 			];
 		}
 	}
+
 	return $meta_details;
 }
 
-function wcb_get_meta_mapping( $prefix = '' ) {
-	return array(
-		$prefix . 'name_of_payer'               => 'Payer Name',
-		$prefix . 'currency'                    => 'Currency',
-		$prefix . 'payment_method'              => 'Payment Method',
+function get_meta_fields_mapping( $prefix = '', $payment_details = true ) {
+	$mapping_fields = array();
+	if ( $payment_details ) {
+		$mapping_fields = array_merge(
+			$mapping_fields,
+			array(
+				$prefix . 'name_of_payer'               => __( 'Payer Name', 'wordcamporg' ),
+				$prefix . 'currency'                    => __( 'Currency', 'wordcamporg' ),
+				$prefix . 'payment_method'              => __( 'Payment Method', 'wordcamporg' ),
 
-		// Payment Method - Direct Deposit
-		$prefix . 'ach_bank_name'               => 'Bank Name',
-		$prefix . 'ach_account_type'            => 'Account Type',
-		$prefix . 'ach_routing_number'          => 'Routing Number',
-		$prefix . 'ach_account_number'          => 'Account Number',
-		$prefix . 'ach_account_holder_name'     => 'Account Holder Name',
+				// Payment Method - Direct Deposit
+				$prefix . 'ach_bank_name'               => __( 'Bank Name', 'wordcamporg' ),
+				$prefix . 'ach_account_type'            => __( 'Account Type', 'wordcamporg' ),
+				$prefix . 'ach_routing_number'          => __( 'Routing Number', 'wordcamporg' ),
+				$prefix . 'ach_account_number'          => __( 'Account Number', 'wordcamporg' ),
+				$prefix . 'ach_account_holder_name'     => __( 'Account Holder Name', 'wordcamporg' ),
 
-		// Payment Method - Check
-		$prefix . 'payable_to'                  => 'Payable To',
-		$prefix . 'check_street_address'        => 'Street Address',
-		$prefix . 'check_city'                  => 'City',
-		$prefix . 'check_state'                 => 'State / Province',
-		$prefix . 'check_zip_code'              => 'ZIP / Postal Code',
-		$prefix . 'check_country'               => 'Country',
+				// Payment Method - Check
+				$prefix . 'payable_to'                  => __( 'Payable To', 'wordcamporg' ),
+				$prefix . 'check_street_address'        => __( 'Street Address', 'wordcamporg' ),
+				$prefix . 'check_city'                  => __( 'City', 'wordcamporg' ),
+				$prefix . 'check_state'                 => __( 'State / Province', 'wordcamporg' ),
+				$prefix . 'check_zip_code'              => __( 'ZIP / Postal Code', 'wordcamporg' ),
+				$prefix . 'check_country'               => __( 'Country', 'wordcamporg' ),
 
-		// Payment Method - Wire
-		$prefix . 'bank_name'                   => 'Beneficiary’s Bank Name',
-		$prefix . 'bank_street_address'         => 'Beneficiary’s Bank Street Address',
-		$prefix . 'bank_city'                   => 'Beneficiary’s Bank City',
-		$prefix . 'bank_state'                  => 'Beneficiary’s Bank State / Province',
-		$prefix . 'bank_zip_code'               => 'Beneficiary’s Bank ZIP / Postal Code',
-		$prefix . 'bank_country_iso3166'        => 'Beneficiary’s Bank Country',
-		$prefix . 'bank_bic'                    => 'Beneficiary’s Bank SWIFT BIC',
-		$prefix . 'beneficiary_account_number'  => 'Beneficiary’s Account Number or IBAN',
+				// Payment Method - Wire
+				$prefix . 'bank_name'                   => __( 'Beneficiary’s Bank Name', 'wordcamporg' ),
+				$prefix . 'bank_street_address'         => __( 'Beneficiary’s Bank Street Address', 'wordcamporg' ),
+				$prefix . 'bank_city'                   => __( 'Beneficiary’s Bank City', 'wordcamporg' ),
+				$prefix . 'bank_state'                  => __( 'Beneficiary’s Bank State / Province', 'wordcamporg' ),
+				$prefix . 'bank_zip_code'               => __( 'Beneficiary’s Bank ZIP / Postal Code', 'wordcamporg' ),
+				$prefix . 'bank_country_iso3166'        => __( 'Beneficiary’s Bank Country', 'wordcamporg' ),
+				$prefix . 'bank_bic'                    => __( 'Beneficiary’s Bank SWIFT BIC', 'wordcamporg' ),
+				$prefix . 'beneficiary_account_number'  => __( 'Beneficiary’s Account Number or IBAN', 'wordcamporg' ),
 
-		// Intermediary bank details
-		$prefix . 'interm_bank_name'            => 'Intermediary Bank Name',
-		$prefix . 'interm_bank_street_address'  => 'Intermediary Bank Street Address',
-		$prefix . 'interm_bank_city'            => 'Intermediary Bank City',
-		$prefix . 'interm_bank_state'           => 'Intermediary Bank State / Province',
-		$prefix . 'interm_bank_zip_code'        => 'Intermediary Bank ZIP / Postal Code',
-		$prefix . 'interm_bank_country_iso3166' => 'Intermediary Bank Country',
-		$prefix . 'interm_bank_swift'           => 'Intermediary Bank SWIFT BIC',
-		$prefix . 'interm_bank_account'         => 'Intermediary Bank Account',
+				// Intermediary bank details
+				$prefix . 'interm_bank_name'            => __( 'Intermediary Bank Name', 'wordcamporg' ),
+				$prefix . 'interm_bank_street_address'  => __( 'Intermediary Bank Street Address', 'wordcamporg' ),
+				$prefix . 'interm_bank_city'            => __( 'Intermediary Bank City', 'wordcamporg' ),
+				$prefix . 'interm_bank_state'           => __( 'Intermediary Bank State / Province', 'wordcamporg' ),
+				$prefix . 'interm_bank_zip_code'        => __( 'Intermediary Bank ZIP / Postal Code', 'wordcamporg' ),
+				$prefix . 'interm_bank_country_iso3166' => __( 'Intermediary Bank Country', 'wordcamporg' ),
+				$prefix . 'interm_bank_swift'           => __( 'Intermediary Bank SWIFT BIC', 'wordcamporg' ),
+				$prefix . 'interm_bank_account'         => __( 'Intermediary Bank Account', 'wordcamporg' ),
 
-		$prefix . 'beneficiary_name'            => 'Beneficiary’s Name',
-		$prefix . 'beneficiary_street_address'  => 'Beneficiary’s Street Address',
-		$prefix . 'beneficiary_city'            => 'Beneficiary’s City',
-		$prefix . 'beneficiary_state'           => 'Beneficiary’s State / Province',
-		$prefix . 'beneficiary_zip_code'        => 'Beneficiary’s ZIP / Postal Code',
-		$prefix . 'beneficiary_country_iso3166' => 'Beneficiary’s Country',
+				$prefix . 'beneficiary_name'            => __( 'Beneficiary’s Name', 'wordcamporg' ),
+				$prefix . 'beneficiary_street_address'  => __( 'Beneficiary’s Street Address', 'wordcamporg' ),
+				$prefix . 'beneficiary_city'            => __( 'Beneficiary’s City', 'wordcamporg' ),
+				$prefix . 'beneficiary_state'           => __( 'Beneficiary’s State / Province', 'wordcamporg' ),
+				$prefix . 'beneficiary_zip_code'        => __( 'Beneficiary’s ZIP / Postal Code', 'wordcamporg' ),
+				$prefix . 'beneficiary_country_iso3166' => __( 'Beneficiary’s Country', 'wordcamporg' ),
 
-		// Vendor payment fields
-		$prefix . 'description'                 => 'Description',
-		$prefix . 'general_notes'               => 'Notes',
+			)
+		);
+	}
+
+	$mapping_fields = array_merge(
+		$mapping_fields,
+		array(
+			// Vendor payment fields
+			$prefix . 'description'            => __( 'Description', 'wordcamporg' ),
+			$prefix . 'general_notes'          => __( 'Notes', 'wordcamporg' ),
+			$prefix . 'vendor_name'            => __( 'Name', 'wordcamporg' ),
+			$prefix . 'vendor_email_address'   => __( 'Email Address', 'wordcamporg' ),
+			$prefix . 'vendor_contact_person'  => __( 'Contact Person', 'wordcamporg' ),
+			$prefix . 'vendor_street_address'  => __( 'Street Address', 'wordcamporg' ),
+			$prefix . 'vendor_city'            => __( 'City', 'wordcamporg' ),
+			$prefix . 'vendor_state'           => __( 'State / Province', 'wordcamporg' ),
+			$prefix . 'vendor_zip_code'        => __( 'ZIP / Postal Code', 'wordcamporg' ),
+			$prefix . 'vendor_country_iso3166' => __( 'Country', 'wordcamporg' ),
+		)
 	);
+
+	return $mapping_fields;
 }
 
-function wcb_get_post_wp_query ( $post_type, $page, $user_id ) {
-	return new WP_Query( array(
-		'post_type'      => $post_type,
-		'post_status'    => 'any',
-		'post_author'    => $user_id,
-		'number_posts'   => - 1,
-		'posts_per_page' => 20,
-		'paged'          => $page,
-	));
-}
