@@ -84,7 +84,7 @@ function vendor_payment_exporter( $email_address, $page ) {
 		];
 
 		$vendor_payment_exp_data = array_merge(
-			$vendor_payment_exp_data, get_meta_details( $meta, '_camppayments_' )
+			$vendor_payment_exp_data, get_meta_details( $meta, \WCP_Payment_Request::POST_TYPE )
 		);
 
 		if ( ! empty( $vendor_payment_exp_data ) ) {
@@ -140,7 +140,7 @@ function reimbursements_exporter( $email_address, $page ) {
 
 		// meta fields
 		$reimbursement_data_to_export = array_merge(
-			$reimbursement_data_to_export, get_meta_details( $meta, '_wcbrr_' )
+			$reimbursement_data_to_export, get_meta_details( $meta, Reimbursement_Requests\POST_TYPE )
 		);
 
 
@@ -199,13 +199,13 @@ function get_post_wp_query( $query_type, $page, $email_address ) {
 
 /**
  * @param $meta array meta object of post, as retrieved by `get_post_meta( $post->ID )`
- * @param $prefix string prefix for meta fields
+ * @param $post_type string post_type . could be one of wcb_reimbursement or wcp_payment_request
  *
  * @return array Details of the reimbursement request
  */
-function get_meta_details( $meta, $prefix ) {
+function get_meta_details( $meta, $post_type ) {
 	$meta_details = array();
-	foreach ( get_meta_fields_mapping( $prefix ) as $meta_field => $meta_field_name ) {
+	foreach ( get_meta_fields_mapping( $post_type ) as $meta_field => $meta_field_name ) {
 		$data = isset( $meta[ $meta_field ] ) ? $meta[ $meta_field ] : null;
 		if ( ! empty( $data ) && is_array( $data ) && ! empty( $data[0] ) ) {
 			$meta_details[] = [
@@ -218,9 +218,11 @@ function get_meta_details( $meta, $prefix ) {
 	return $meta_details;
 }
 
-function get_meta_fields_mapping( $prefix = '', $payment_details = true ) {
+function get_meta_fields_mapping( $post_type ) {
 	$mapping_fields = array();
-	if ( $payment_details ) {
+
+	if ( Reimbursement_Requests\POST_TYPE === $post_type ) {
+		$prefix = '_wcbrr_';
 		$mapping_fields = array_merge(
 			$mapping_fields,
 			array(
@@ -272,24 +274,25 @@ function get_meta_fields_mapping( $prefix = '', $payment_details = true ) {
 
 			)
 		);
+	} elseif ( \WCP_Payment_Request::POST_TYPE === $post_type ) {
+		$prefix = '_camppayments_';
+		$mapping_fields = array_merge(
+			$mapping_fields,
+			array(
+				// Vendor payment fields
+				$prefix . 'description'            => __( 'Description', 'wordcamporg' ),
+				$prefix . 'general_notes'          => __( 'Notes', 'wordcamporg' ),
+				$prefix . 'vendor_name'            => __( 'Name', 'wordcamporg' ),
+				$prefix . 'vendor_email_address'   => __( 'Email Address', 'wordcamporg' ),
+				$prefix . 'vendor_contact_person'  => __( 'Contact Person', 'wordcamporg' ),
+				$prefix . 'vendor_street_address'  => __( 'Street Address', 'wordcamporg' ),
+				$prefix . 'vendor_city'            => __( 'City', 'wordcamporg' ),
+				$prefix . 'vendor_state'           => __( 'State / Province', 'wordcamporg' ),
+				$prefix . 'vendor_zip_code'        => __( 'ZIP / Postal Code', 'wordcamporg' ),
+				$prefix . 'vendor_country_iso3166' => __( 'Country', 'wordcamporg' ),
+			)
+		);
 	}
-
-	$mapping_fields = array_merge(
-		$mapping_fields,
-		array(
-			// Vendor payment fields
-			$prefix . 'description'            => __( 'Description', 'wordcamporg' ),
-			$prefix . 'general_notes'          => __( 'Notes', 'wordcamporg' ),
-			$prefix . 'vendor_name'            => __( 'Name', 'wordcamporg' ),
-			$prefix . 'vendor_email_address'   => __( 'Email Address', 'wordcamporg' ),
-			$prefix . 'vendor_contact_person'  => __( 'Contact Person', 'wordcamporg' ),
-			$prefix . 'vendor_street_address'  => __( 'Street Address', 'wordcamporg' ),
-			$prefix . 'vendor_city'            => __( 'City', 'wordcamporg' ),
-			$prefix . 'vendor_state'           => __( 'State / Province', 'wordcamporg' ),
-			$prefix . 'vendor_zip_code'        => __( 'ZIP / Postal Code', 'wordcamporg' ),
-			$prefix . 'vendor_country_iso3166' => __( 'Country', 'wordcamporg' ),
-		)
-	);
 
 	return $mapping_fields;
 }
