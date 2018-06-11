@@ -160,6 +160,18 @@ function reimbursements_exporter( $email_address, $page ) {
 	return $results;
 }
 
+/**
+ * Helper function, to build and return WP_Query object for fetching posts that should be considered for exporting data
+ *
+ * We use `_camppayments_vendor_email_address` as the key for `payment_request`, instead of author email,
+ * because the vendor contact details could be of an individual (instead of a business), and thus is a potential PII
+ *
+ * @param $query_type string
+ * @param $page integer
+ * @param $email_address string Email address of the entity making the request
+ *
+ * @return null|WP_Query
+ */
 function get_post_wp_query( $query_type, $page, $email_address ) {
 
 	$query_args = array(
