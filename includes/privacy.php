@@ -218,6 +218,13 @@ function get_meta_details( $meta, $post_type ) {
 	return $meta_details;
 }
 
+/**
+ * Returns array of meta fields and their titles that we want to allow export for.
+ *
+ * @param $post_type string
+ *
+ * @return array
+ */
 function get_meta_fields_mapping( $post_type ) {
 	$mapping_fields = array();
 
